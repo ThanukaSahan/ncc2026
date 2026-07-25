@@ -2,10 +2,10 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = 'dockerhub-creds'   // create this credential in Jenkins (username/password or token)
-        DOCKER_IMAGE = "yourdockerhubuser/yourapp:${env.BUILD_NUMBER}"
-        SONARQUBE_NAME = 'sonarqube'                // SonarQube server configured in Jenkins
-        SONAR_TOKEN_ID = 'sonar-token'              // Sonar token stored in Jenkins credentials (string)
+        DOCKERHUB_CREDENTIALS = 'dockerhub-creds'
+        DOCKER_IMAGE         = "yourdockerhubuser/yourapp:${env.BUILD_NUMBER}"
+        SONARQUBE_NAME       = 'sonarqube'
+        SONAR_TOKEN_ID       = 'sonar-token'
     }
 
     stages {
@@ -17,7 +17,7 @@ pipeline {
 
         stage('Build (compile/package)') {
             agent {
-                docker { image 'maven:3.9.9' }
+                docker { image 'maven:3.9.9-eclipse-temurin-21-alpine' }
             }
             steps {
                 sh 'mvn -B -DskipTests package'
@@ -27,14 +27,12 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    // build Docker image from app/Dockerfile
                     def img = null
                     if (isUnix()) {
                         img = docker.build("${env.DOCKER_IMAGE}", "-f app/Dockerfile app")
                     } else {
                         img = docker.build("${env.DOCKER_IMAGE}", "-f app\\Dockerfile app")
                     }
-                    // store image name for later stages
                     env.BUILT_IMAGE = env.DOCKER_IMAGE
                 }
             }
@@ -62,7 +60,6 @@ pipeline {
                     docker.withRegistry('https://registry.hub.docker.com', env.DOCKERHUB_CREDENTIALS) {
                         def toPush = docker.image(env.BUILT_IMAGE)
                         toPush.push()
-                        // optionally push 'latest' tag
                         toPush.push('latest')
                     }
                 }
