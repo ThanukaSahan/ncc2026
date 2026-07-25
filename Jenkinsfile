@@ -20,7 +20,8 @@ pipeline {
                 docker { image 'maven:3.9.9-eclipse-temurin-21-alpine' }
             }
             steps {
-                sh 'mvn -B -DskipTests package'
+                // Setting -Dmaven.repo.local creates .m2 inside workspace where build user has permission
+                sh 'mvn -B -DskipTests package -Dmaven.repo.local=.m2/repository'
             }
         }
 
@@ -44,9 +45,9 @@ pipeline {
                     withCredentials([string(credentialsId: env.SONAR_TOKEN_ID, variable: 'SONAR_TOKEN')]) {
                         withSonarQubeEnv(env.SONARQUBE_NAME) {
                             if (isUnix()) {
-                                sh 'mvn -B test sonar:sonar -Dsonar.login=${SONAR_TOKEN}'
+                                sh 'mvn -B test sonar:sonar -Dsonar.login=${SONAR_TOKEN} -Dmaven.repo.local=.m2/repository'
                             } else {
-                                bat 'mvn -B test sonar:sonar -Dsonar.login=%SONAR_TOKEN%'
+                                bat 'mvn -B test sonar:sonar -Dsonar.login=%SONAR_TOKEN% -Dmaven.repo.local=.m2/repository'
                             }
                         }
                     }
