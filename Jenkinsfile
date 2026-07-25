@@ -16,14 +16,11 @@ pipeline {
         }
 
         stage('Build (compile/package)') {
+            agent {
+                docker { image 'maven:3.9.9-jdk11' }
+            }
             steps {
-                script {
-                    if (isUnix()) {
-                        sh 'mvn -B -DskipTests package'
-                    } else {
-                        bat 'mvn -B -DskipTests package'
-                    }
-                }
+                sh 'mvn -B -DskipTests package'
             }
         }
 
