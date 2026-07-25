@@ -15,14 +15,13 @@ pipeline {
             }
         }
 
-        stage('Build (compile/package)') {
+        stage('Build & Install Dependencies') {
             agent {
-                docker { image 'maven:3.9.9-eclipse-temurin-21-alpine' }
+                docker { image 'node:20-alpine' }
             }
             steps {
-                // Force execution inside the primary workspace directory
-                dir("${env.WORKSPACE}") {
-                    sh 'mvn -B -DskipTests package -Dmaven.repo.local=.m2/repository'
+                dir('app') {
+                    sh 'npm ci'
                 }
             }
         }
@@ -41,17 +40,15 @@ pipeline {
             }
         }
 
-        stage('SonarQube + Tests') {
+        stage('SonarQube Analysis') {
             steps {
                 script {
                     withCredentials([string(credentialsId: env.SONAR_TOKEN_ID, variable: 'SONAR_TOKEN')]) {
                         withSonarQubeEnv(env.SONARQUBE_NAME) {
-                            dir("${env.WORKSPACE}") {
-                                if (isUnix()) {
-                                    sh 'mvn -B test sonar:sonar -Dsonar.login=${SONAR_TOKEN} -Dmaven.repo.local=.m2/repository'
-                                } else {
-                                    bat 'mvn -B test sonar:sonar -Dsonar.login=%SONAR_TOKEN% -Dmaven.repo.local=.m2/repository'
-                                }
+                            if (isUnix()) {
+                                sh 'sonar-scanner -Dsonar.login=${SONAR_TOKEN}'
+                            } else {
+                                bat 'sonar-scanner -Dsonar.login=%SONAR_TOKEN%'
                             }
                         }
                     }
