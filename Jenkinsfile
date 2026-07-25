@@ -17,7 +17,7 @@ pipeline {
 
         stage('Build (compile/package)') {
             agent {
-                docker { image 'maven:3.9.9-jdk11' }
+                docker { image 'maven:3.9.9' }
             }
             steps {
                 sh 'mvn -B -DskipTests package'
